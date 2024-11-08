@@ -129,6 +129,8 @@ def get_function_schema(
             "type": guess_type(T),
             "description": description,  # type: ignore
         }
+        if guess_type(T) == "array":
+            schema["properties"][name]["items"] = {"type": guess_type(get_args(T)[0])}
 
         if enum_ is not None:
             schema["properties"][name]["enum"] = [
@@ -137,11 +139,14 @@ def get_function_schema(
         if default_value is not inspect._empty:
             schema["properties"][name]["default"] = default_value
 
-        if (
-            get_origin(T) is not Literal
-            and not isinstance(None, T)
-            and default_value is inspect._empty
-        ):
+        try:
+            if (
+                get_origin(T) is not Literal
+                and not isinstance(None, T)
+                and default_value is inspect._empty
+            ):
+                schema["required"].append(name)
+        except Exception:
             schema["required"].append(name)
 
         if get_origin(T) is Literal:
